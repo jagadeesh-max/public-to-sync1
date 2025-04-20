@@ -1,0 +1,41 @@
+name: Sync to Public Repository
+
+on:
+  push:
+    branches:
+      - main # Or any branch you want to trigger the sync from
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 #Needed for full history and push
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Set up Git identity
+        run: |
+          git config --global user.email "you@example.com"  # Replace with your email
+          git config --global user.name "Your Name"  # Replace with your name
+
+      - name: Add public remote
+        run: |
+          git remote add public git@github.com:jagadeesh-max/public-to-sync1.git
+
+      - name: clean up and verify git repo
+        run: |
+          git fsck --full
+          git gc --prune=now
+
+      - name: Sync to public repository
+        run: |
+          git push --force public main  # Push to the public repository (with --force)
